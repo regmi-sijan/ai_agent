@@ -1,0 +1,35 @@
+# Credentials and machine-local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+# Environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+build/
+dist/
+# Private datasets, generated code, logs, plots, and model checkpoints
+outputs/
+data/
+*.root
+*.parquet
+*.npy
+*.npz
+*.pt
+*.pth
+*.pkl
+*.joblib
+*.bin
+# Local editors / OS
+.DS_Store
+.idea/
+.vscode/

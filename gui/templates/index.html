@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Antigravity Physics & Scientific ML Dashboard</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- KaTeX for Physics Math -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <!-- Marked for Markdown Rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50: '#f0f9ff', 500: '#0284c7', 600: '#0369a1', 900: '#0c4a6e' },
+            deep: '#0f172a',
+            surface: '#1e293b',
+            border: '#334155'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background-color: #0b0f19; color: #e2e8f0; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
+    .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(51, 65, 85, 0.6); }
+    .glass-card { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(51, 65, 85, 0.4); }
+    ::-webkit-scrollbar { width: 10px; height: 11px; }
+    ::-webkit-scrollbar-track { background: #0f172a; border-radius: 6px; }
+    ::-webkit-scrollbar-thumb { background: #475569; border-radius: 6px; border: 2px solid #0f172a; }
+    ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+    ::-webkit-scrollbar-thumb:active { background: #06b6d4; }
+    * { scrollbar-width: auto; scrollbar-color: #475569 #0f172a; }
+    pre code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="glass sticky top-0 z-50 px-6 py-3 border-b border-border flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <div class="p-2 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/20">
+        <i data-lucide="atom" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+          Antigravity Physics & Scientific ML
+        </h1>
+        <p class="text-xs text-slate-400">Autonomous Dual-Agent Closed-Loop Research System</p>
+      </div>
+    </div>
+    <div class="flex items-center space-x-3">
+      <button
+        onclick="clearAllDashboards()"
+        class="flex items-center space-x-1.5 text-xs px-3 py-1.5 rounded-full bg-slate-800/80 hover:bg-rose-950/60 hover:text-rose-300 hover:border-rose-500/50 text-slate-300 border border-slate-700 transition"
+        title="Clear all dashboard outputs and displays"
+      >
+        <i data-lucide="eraser" class="w-3.5 h-3.5 text-rose-400"></i>
+        <span>Clear Displays</span>
+      </button>
+      <div id="headerAgentStatus" class="flex items-center space-x-2 text-xs px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-700">
+        <span id="headerAgentDot" class="w-2 h-2 rounded-full bg-slate-500"></span>
+        <span id="headerAgentText" class="text-slate-300 font-medium">Agent: Standby</span>
+      </div>
+      <div class="flex items-center space-x-2 text-xs px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-700">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span class="text-slate-300">ROOT C++ & PyTorch: Ready</span>
+      </div>
+      <div class="text-xs px-3 py-1.5 rounded-full bg-cyan-950/60 border border-cyan-800 text-cyan-300 font-mono">
+        Gemini 3.8 Flash
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <div class="flex-1 grid grid-cols-12 gap-6 p-6 overflow-y-auto">
+
+    <!-- Left Column: Input & Controls (4 Cols) -->
+    <div class="col-span-12 lg:col-span-4 flex flex-col space-y-4">
+
+      <!-- Input Panel -->
+      <div class="glass rounded-2xl p-5 flex flex-col space-y-4 shadow-xl">
+        <div class="flex items-center space-x-2 border-b border-border pb-3">
+          <i data-lucide="sliders" class="w-5 h-5 text-cyan-400"></i>
+          <h2 class="font-semibold text-slate-200">Experimental Inputs</h2>
+        </div>
+
+        <!-- Mode Toggle: Upload vs Local Path -->
+        <div class="flex rounded-lg bg-slate-900/80 p-1 border border-border">
+          <button id="tabUploadBtn" onclick="switchDataMode('upload')" class="flex-1 py-1.5 text-xs font-medium rounded-md bg-cyan-600 text-white transition">
+            Upload Files
+          </button>
+          <button id="tabFolderBtn" onclick="switchDataMode('folder')" class="flex-1 py-1.5 text-xs font-medium rounded-md text-slate-400 hover:text-white transition">
+            Local Path (File / Folder)
+          </button>
+        </div>
+
+        <!-- Mode A: Drag & Drop Files -->
+        <div id="uploadContainer" class="flex flex-col space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="text-xs text-slate-400 font-medium">Data Files (CSV, ROOT, NPY, TSV, Parquet)</label>
+            <button id="clearFilesBtn" type="button" onclick="clearSelectedFiles()" class="hidden text-[10px] text-pink-400 hover:text-pink-300">Clear All</button>
+          </div>
+          <!-- Hidden file input outside of dropZone to prevent click loop -->
+          <input type="file" id="fileInput" multiple style="display:none;" onchange="handleFileSelect(event)">
+          <div id="dropZone" onclick="document.getElementById('fileInput').click()" class="border-2 border-dashed border-slate-600 hover:border-cyan-500 rounded-xl p-5 text-center cursor-pointer transition bg-slate-900/40 select-none">
+            <i data-lucide="upload-cloud" class="w-8 h-8 mx-auto text-slate-400 mb-2 pointer-events-none"></i>
+            <p class="text-xs text-slate-300 font-medium pointer-events-none">Click or Drag & Drop file(s) here</p>
+            <p class="text-[10px] text-slate-500 mt-1 pointer-events-none">.root, .csv, .parquet, .npy, .dat</p>
+            <button type="button" onclick="event.stopPropagation(); document.getElementById('fileInput').click()" class="mt-3 px-3 py-1 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-xs font-medium shadow-sm inline-flex items-center space-x-1.5 transition">
+              <i data-lucide="folder-open" class="w-3.5 h-3.5"></i>
+              <span>Browse Files</span>
+            </button>
+          </div>
+          <div id="fileList" class="max-h-36 overflow-y-auto space-y-1 text-xs"></div>
+        </div>
+
+        <!-- Mode B: Local File or Folder Location -->
+        <div id="folderContainer" class="hidden flex flex-col space-y-2">
+          <label class="text-xs text-slate-400 font-medium">Local Path to File or Folder</label>
+          <div class="relative">
+            <i data-lucide="folder" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+            <input
+              type="text"
+              id="folderInput"
+              placeholder="/path/to/truth.csv, ./outputs/uploads/truth.csv, or folder"
+              class="w-full bg-slate-900/80 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 font-mono"
+              oninput="handlePathInput(event)"
+            >
+          </div>
+          <div id="pathValidationBadge" class="hidden text-[11px] font-mono py-1.5 px-3 rounded-lg border"></div>
+          <p class="text-[10px] text-slate-500">Supports absolute paths, ~/ paths, relative paths, single files (.csv, .root, .npy), or folders.</p>
+        </div>
+
+        <!-- Physics Task Description -->
+        <div class="flex flex-col space-y-1.5">
+          <label class="text-xs text-slate-400 font-medium flex justify-between">
+            <span>Physics Description & Goal</span>
+            <span class="text-cyan-400 cursor-pointer text-[10px]" onclick="insertTemplate()">Insert Example</span>
+          </label>
+          <textarea id="taskInput" rows="4" placeholder="Describe the physics goal (e.g. Classify meson decays from 4-momenta, reconstruct resonance peak, train PyTorch model, compute chi2/ndf, check energy-momentum conservation)..." class="w-full bg-slate-900/80 border border-slate-700 rounded-lg p-3 text-xs text-slate-200 focus:outline-none focus:border-cyan-500"></textarea>
+        </div>
+
+        <!-- Pre-trained Model (Optional) -->
+        <div class="flex flex-col space-y-1.5">
+          <label class="text-xs text-slate-400 font-medium flex justify-between">
+            <span>Pre-trained Model (Optional)</span>
+            <span class="text-slate-500 text-[10px]">.pt, .pth, .joblib, or Model ID</span>
+          </label>
+          <div class="flex space-x-2">
+            <input type="text" id="pretrainedModelInput" placeholder="Path (e.g. /models/weights.pt) or Torchvision/HF ID" class="flex-1 bg-slate-900/80 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500">
+            <button onclick="document.getElementById('modelFileInput').click()" type="button" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs text-slate-300 flex items-center space-x-1" title="Upload model weights">
+              <i data-lucide="paperclip" class="w-3.5 h-3.5"></i>
+            </button>
+            <input type="file" id="modelFileInput" class="hidden" onchange="handleModelUpload(event)">
+          </div>
+          <div id="modelFileBadge" class="hidden text-[10px] text-cyan-400 font-mono"></div>
+        </div>
+
+        <!-- Target Precision -->
+        <div class="flex flex-col space-y-1.5">
+          <label class="text-xs text-slate-400 font-medium">Target Precision / Convergence Criteria (Optional)</label>
+          <input type="text" id="targetInput" placeholder="e.g. AUC >= 0.95 and mass resolution < 15 MeV" class="w-full bg-slate-900/80 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500">
+        </div>
+
+        <!-- Run Buttons -->
+        <button id="runBtn" onclick="startPipeline(false)" class="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 font-semibold text-xs tracking-wide text-white shadow-lg shadow-cyan-500/25 transition flex items-center justify-center space-x-2">
+          <i data-lucide="play" class="w-4 h-4"></i>
+          <span>Launch Autonomous Pipeline</span>
+        </button>
+
+        <button id="resumeBtn" onclick="startPipeline(true)" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 font-medium text-xs text-slate-300 transition flex items-center justify-center space-x-2" title="Skip planning and resume Experimenter training directly from the generated plan">
+          <i data-lucide="rotate-cw" class="w-3.5 h-3.5 text-cyan-400"></i>
+          <span>Resume from Established Plan</span>
+        </button>
+
+      </div>
+
+      <!-- Live System Status Card -->
+      <div class="glass rounded-2xl p-4 flex flex-col space-y-2">
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-slate-400 font-medium">Agent Status:</span>
+          <span id="agentStateBadge" class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-slate-800 text-slate-400 border border-slate-700 flex items-center space-x-1.5">
+            <span id="agentStateDot" class="w-2 h-2 rounded-full bg-slate-500"></span>
+            <span id="agentStateText">Standby</span>
+          </span>
+        </div>
+        <div class="flex items-center justify-between text-xs text-slate-400">
+          <span>Active Iteration:</span>
+          <span id="activeIterationBadge" class="font-bold text-cyan-400">Standby</span>
+        </div>
+        <div class="w-full bg-slate-800 rounded-full h-1.5">
+          <div id="pipelineProgressBar" class="bg-cyan-500 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+        <p id="pipelineStatusText" class="text-[11px] text-slate-400 italic">Ready for experimental prompt.</p>
+      </div>
+
+    </div>
+
+    <!-- Right Column: Sub-Agent Output & Live Feeds (8 Cols) -->
+    <div class="col-span-12 lg:col-span-8 flex flex-col space-y-4">
+
+      <!-- Live Mid-Run Steering Bar -->
+      <div id="steeringContainer" class="glass rounded-xl p-3 border border-indigo-500/40 bg-indigo-950/20 flex items-center space-x-3 shadow-lg">
+        <div class="flex items-center space-x-1.5 text-amber-400 font-semibold text-xs whitespace-nowrap">
+          <i data-lucide="zap" class="w-4 h-4 text-amber-400 animate-pulse"></i>
+          <span>Live Steering:</span>
+        </div>
+        <input
+          type="text"
+          id="steeringInput"
+          placeholder="Inject guidance mid-run (e.g. 'focus on pi0 resonance', 'use 4-layer MLP', 'cut pT > 1 GeV')..."
+          class="flex-1 bg-slate-900/90 border border-slate-700/80 rounded-lg px-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400"
+          onkeydown="if(event.key === 'Enter') sendLiveSteering()"
+        />
+        <button
+          id="sendSteerBtn"
+          onclick="sendLiveSteering()"
+          class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold flex items-center space-x-1.5 shadow transition active:scale-95"
+        >
+          <i data-lucide="send" class="w-3.5 h-3.5"></i>
+          <span>Send Directive ⚡</span>
+        </button>
+      </div>
+
+      <!-- Tabs Header -->
+      <div class="flex border-b border-border space-x-2 overflow-x-auto pb-1.5">
+        <button id="tabTheoristBtn" onclick="switchOutputTab('theorist')" class="px-4 py-2 text-xs font-semibold border-b-2 border-cyan-400 text-cyan-400 flex items-center space-x-2 whitespace-nowrap">
+          <i data-lucide="brain" class="w-4 h-4"></i>
+          <span>🧠 Sub-Agent 1: Theorist / Methodologist</span>
+        </button>
+        <button id="tabExperimenterBtn" onclick="switchOutputTab('experimenter')" class="px-4 py-2 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap">
+          <i data-lucide="flask-conical" class="w-4 h-4"></i>
+          <span>🧪 Sub-Agent 2: ML Experimenter & Training</span>
+        </button>
+        <button id="tabCrosstalkBtn" onclick="switchOutputTab('crosstalk')" class="px-4 py-2 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap">
+          <i data-lucide="messages-square" class="w-4 h-4"></i>
+          <span>🤝 Inter-Agent Dialogue (<span id="crosstalkCount">0</span>)</span>
+        </button>
+        <button id="tabFiguresBtn" onclick="switchOutputTab('figures')" class="px-4 py-2 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap">
+          <i data-lucide="line-chart" class="w-4 h-4"></i>
+          <span>📊 Figures & Plots (<span id="figureCount">0</span>)</span>
+        </button>
+        <button id="tabLogsBtn" onclick="switchOutputTab('logs')" class="px-4 py-2 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap">
+          <i data-lucide="archive" class="w-4 h-4"></i>
+          <span>📁 Run Logs & Summary</span>
+        </button>
+      </div>
+
+      <!-- Tab Content Area -->
+      <div class="flex-1 glass rounded-2xl p-5 overflow-hidden flex flex-col relative min-h-[550px]">
+
+        <!-- Tab 1: Theorist / Methodologist Plan -->
+        <div id="theoristView" class="flex-1 overflow-y-auto space-y-4 pr-2">
+          <div class="flex items-center justify-between pb-2 border-b border-border">
+            <span class="text-xs font-bold text-magenta-400 uppercase tracking-wider text-pink-400">Methodology & Analytical Formulations</span>
+            <div class="flex items-center space-x-3">
+              <span id="theoristStatus" class="text-[10px] text-slate-500">Waiting to plan...</span>
+              <button onclick="clearAllDashboards()" class="px-2.5 py-1 text-[11px] font-medium rounded-lg bg-slate-800/90 hover:bg-rose-950/70 hover:text-rose-300 hover:border-rose-500/50 text-slate-300 border border-slate-700 flex items-center space-x-1.5 transition shadow-sm" title="Clear all dashboard displays, logs, and outputs">
+                <i data-lucide="eraser" class="w-3 h-3 text-rose-400"></i>
+                <span>Clear Displays</span>
+              </button>
+            </div>
+          </div>
+          <div id="theoristContent" class="text-xs text-slate-300 leading-relaxed space-y-3 prose prose-invert max-w-none">
+            <div class="p-6 text-center text-slate-500 text-xs">
+              Provide input data and click "Launch Autonomous Pipeline" to generate physics methodology.
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Experimenter ML & Code Execution Logs -->
+        <div id="experimenterView" class="hidden flex-1 overflow-y-auto space-y-4 pr-2">
+          <div class="flex items-center justify-between pb-2 border-b border-border">
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Execution, PyTorch Training & Validation</span>
+            <div class="flex items-center space-x-3">
+              <span id="experimenterStatus" class="text-[10px] text-slate-500">Idle</span>
+              <button onclick="clearAllDashboards()" class="px-2.5 py-1 text-[11px] font-medium rounded-lg bg-slate-800/90 hover:bg-rose-950/70 hover:text-rose-300 hover:border-rose-500/50 text-slate-300 border border-slate-700 flex items-center space-x-1.5 transition shadow-sm" title="Clear all dashboard displays, logs, and outputs">
+                <i data-lucide="eraser" class="w-3 h-3 text-rose-400"></i>
+                <span>Clear Displays</span>
+              </button>
+            </div>
+          </div>
+          <div id="experimenterLogs" class="space-y-3">
+            <div class="p-6 text-center text-slate-500 text-xs">
+              Code execution logs, training steps, and sanity cross-check outputs will stream here.
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Inter-Agent Cross-Talk & Peer Review -->
+        <div id="crosstalkView" class="hidden flex-1 overflow-y-auto space-y-3 pr-2">
+          <div class="flex items-center justify-between pb-2 border-b border-border">
+            <span class="text-xs font-bold uppercase tracking-wider text-purple-400">Collaborative Dialogue & Live Peer Review</span>
+            <div class="flex items-center space-x-3">
+              <span class="text-[10px] text-slate-500">Bidirectional Inter-Agent Bus</span>
+              <button onclick="clearAllDashboards()" class="px-2.5 py-1 text-[11px] font-medium rounded-lg bg-slate-800/90 hover:bg-rose-950/70 hover:text-rose-300 hover:border-rose-500/50 text-slate-300 border border-slate-700 flex items-center space-x-1.5 transition shadow-sm" title="Clear all dashboard displays, logs, and outputs">
+                <i data-lucide="eraser" class="w-3 h-3 text-rose-400"></i>
+                <span>Clear Displays</span>
+              </button>
+            </div>
+          </div>
+          <div id="crosstalkMessages" class="space-y-3">
+            <div class="p-6 text-center text-slate-500 text-xs">
+              Live consultations, theoretical Q&A, and peer-review defenses between Sub-Agent 1 and Sub-Agent 2 will appear here.
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 4: Figures & Plot Gallery -->
+        <div id="figuresView" class="hidden flex-1 overflow-y-auto">
+          <div class="flex items-center justify-between pb-3 border-b border-border mb-4">
+            <span class="text-xs font-bold text-cyan-400 uppercase tracking-wider">Generated Physics Figures (Loss, ROC, Mass Peaks, Pulls)</span>
+            <div class="flex items-center space-x-2">
+              <button onclick="isDisplayCleared = false; fetchFigures();" class="text-xs text-slate-400 hover:text-cyan-400 flex items-center space-x-1">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                <span>Refresh</span>
+              </button>
+              <button onclick="clearAllDashboards()" class="px-2.5 py-1 text-[11px] font-medium rounded-lg bg-slate-800/90 hover:bg-rose-950/70 hover:text-rose-300 hover:border-rose-500/50 text-slate-300 border border-slate-700 flex items-center space-x-1.5 transition shadow-sm ml-2" title="Clear all dashboard displays, logs, and outputs">
+                <i data-lucide="eraser" class="w-3 h-3 text-rose-400"></i>
+                <span>Clear Displays</span>
+              </button>
+            </div>
+          </div>
+          <div id="figuresGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="col-span-2 text-center py-12 text-slate-500 text-xs">
+              Figures saved by the Experimenter agent in <code class="text-cyan-400">outputs/figures/</code> will appear here automatically.
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 5: Run Logs & Executive Summaries -->
+        <div id="logsView" class="hidden flex-1 overflow-y-auto space-y-4 pr-2">
+          <div class="flex items-center justify-between pb-3 border-b border-border">
+            <span class="text-xs font-bold text-amber-400 uppercase tracking-wider">Archived Experiment Runs, Summaries & Codes</span>
+            <div class="flex items-center space-x-2">
+              <button onclick="loadRunLogs(false)" class="text-xs text-slate-400 hover:text-amber-400 flex items-center space-x-1">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                <span>Refresh Runs</span>
+              </button>
+              <button onclick="clearAllDashboards()" class="px-2.5 py-1 text-[11px] font-medium rounded-lg bg-slate-800/90 hover:bg-rose-950/70 hover:text-rose-300 hover:border-rose-500/50 text-slate-300 border border-slate-700 flex items-center space-x-1.5 transition shadow-sm ml-2" title="Clear all dashboard displays, logs, and outputs">
+                <i data-lucide="eraser" class="w-3 h-3 text-rose-400"></i>
+                <span>Clear Displays</span>
+              </button>
+            </div>
+          </div>
+          <div class="grid grid-cols-12 gap-4">
+            <div class="col-span-12 md:col-span-4 space-y-2 max-h-[500px] overflow-y-auto pr-1" id="runsList">
+              <div class="text-xs text-slate-500 p-4 text-center">Loading run logs...</div>
+            </div>
+            <div class="col-span-12 md:col-span-8 bg-slate-950/80 border border-slate-800 rounded-xl p-4 overflow-y-auto max-h-[500px]">
+              <div id="runDetailContent" class="prose prose-invert max-w-none text-xs text-slate-300">
+                <p class="text-slate-500 italic">Select an archived run on the left to inspect its executive summary, metrics, and generated code scripts.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    function refreshIcons() {
+      try {
+        if (window.lucide && typeof lucide.createIcons === 'function') {
+          lucide.createIcons();
+        }
+      } catch (e) {
+        console.warn("Lucide icon render notice:", e);
+      }
+    }
+
+    let selectedFiles = [];
+    let uploadedModelFile = null;
+    let cachedPlanMarkdown = "";
+    let currentDataMode = 'upload';
+    let currentEventSource = null;
+    let isDisplayCleared = false;
+
+    function handleModelUpload(e) {
+      if (e.target.files && e.target.files[0]) {
+        uploadedModelFile = e.target.files[0];
+        const badge = document.getElementById('modelFileBadge');
+        badge.classList.remove('hidden');
+        badge.innerText = `Uploaded: ${uploadedModelFile.name} (${(uploadedModelFile.size / (1024*1024)).toFixed(2)} MB)`;
+        document.getElementById('pretrainedModelInput').value = uploadedModelFile.name;
+      }
+    }
+
+    function switchDataMode(mode) {
+      currentDataMode = mode;
+      const upBtn = document.getElementById('tabUploadBtn');
+      const foBtn = document.getElementById('tabFolderBtn');
+      const upCont = document.getElementById('uploadContainer');
+      const foCont = document.getElementById('folderContainer');
+
+      if (mode === 'upload') {
+        upBtn.className = 'flex-1 py-1.5 text-xs font-medium rounded-md bg-cyan-600 text-white transition';
+        foBtn.className = 'flex-1 py-1.5 text-xs font-medium rounded-md text-slate-400 hover:text-white transition';
+        upCont.classList.remove('hidden');
+        foCont.classList.add('hidden');
+      } else {
+        foBtn.className = 'flex-1 py-1.5 text-xs font-medium rounded-md bg-cyan-600 text-white transition';
+        upBtn.className = 'flex-1 py-1.5 text-xs font-medium rounded-md text-slate-400 hover:text-white transition';
+        foCont.classList.remove('hidden');
+        upCont.classList.add('hidden');
+      }
+    }
+
+    let activeSessionId = null;
+
+    function switchOutputTab(tab) {
+      const views = ['theorist', 'experimenter', 'crosstalk', 'figures', 'logs'];
+      views.forEach(v => {
+        const el = document.getElementById(v + 'View');
+        if (el) el.classList.add('hidden');
+        const btn = document.getElementById('tab' + v.charAt(0).toUpperCase() + v.slice(1) + 'Btn');
+        if (btn) {
+          btn.classList.remove('border-cyan-400', 'text-cyan-400');
+          btn.classList.add('border-transparent', 'text-slate-400');
+        }
+      });
+
+      const targetEl = document.getElementById(tab + 'View');
+      if (targetEl) targetEl.classList.remove('hidden');
+      const activeBtn = document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1) + 'Btn');
+      if (activeBtn) {
+        activeBtn.classList.add('border-cyan-400', 'text-cyan-400');
+        activeBtn.classList.remove('border-transparent', 'text-slate-400');
+      }
+
+      if (tab === 'figures') {
+        if (!isDisplayCleared) fetchFigures();
+      } else if (tab === 'logs') {
+        loadRunLogs(false);
+      }
+    }
+
+    // Drag and drop handlers
+    const dropZone = document.getElementById('dropZone');
+
+    if (dropZone) {
+      dropZone.ondragover = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.add('border-cyan-400', 'bg-cyan-950/20');
+      };
+      dropZone.ondragleave = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.remove('border-cyan-400', 'bg-cyan-950/20');
+      };
+      dropZone.ondrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.remove('border-cyan-400', 'bg-cyan-950/20');
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          handleFiles(e.dataTransfer.files);
+        }
+      };
+    }
+
+    function handleFileSelect(e) {
+      if (e.target.files && e.target.files.length > 0) {
+        handleFiles(e.target.files);
+      }
+      e.target.value = ''; // Reset to allow re-selecting same file
+    }
+
+    function handleFiles(files) {
+      for (let i = 0; i < files.length; i++) {
+        const f = files[i];
+        if (!selectedFiles.some(existing => existing.name === f.name && existing.size === f.size)) {
+          selectedFiles.push(f);
+        }
+      }
+      renderFileList();
+    }
+
+    function removeSelectedFile(index) {
+      selectedFiles.splice(index, 1);
+      renderFileList();
+    }
+
+    function clearSelectedFiles() {
+      selectedFiles = [];
+      renderFileList();
+    }
+
+    function renderFileList() {
+      const list = document.getElementById('fileList');
+      const clearBtn = document.getElementById('clearFilesBtn');
+      if (clearBtn) {
+        if (selectedFiles.length > 0) clearBtn.classList.remove('hidden');
+        else clearBtn.classList.add('hidden');
+      }
+
+      if (selectedFiles.length === 0) {
+        list.innerHTML = '';
+        return;
+      }
+
+      list.innerHTML = selectedFiles.map((f, i) => `
+        <div class="flex items-center justify-between p-1.5 bg-slate-800/90 rounded border border-slate-700">
+          <span class="truncate max-w-[170px] text-slate-200 font-mono text-[11px]">${f.name}</span>
+          <div class="flex items-center space-x-2 shrink-0">
+            <span class="text-slate-400 text-[10px] font-mono">${(f.size / (1024*1024)).toFixed(2)} MB</span>
+            <button type="button" onclick="removeSelectedFile(${i})" class="text-slate-500 hover:text-red-400 text-xs px-1" title="Remove file">&times;</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function setAgentStatus(status) {
+      const badge = document.getElementById('agentStateBadge');
+      const dot = document.getElementById('agentStateDot');
+      const text = document.getElementById('agentStateText');
+      const headerDot = document.getElementById('headerAgentDot');
+      const headerText = document.getElementById('headerAgentText');
+
+      if (status === 'Running') {
+        if (text) text.innerText = 'Running';
+        if (badge) badge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-950/70 text-amber-300 border border-amber-500/50 flex items-center space-x-1.5';
+        if (dot) dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+        if (headerText) {
+          headerText.innerText = 'Agent: Running';
+          headerText.className = 'text-amber-300 font-medium';
+        }
+        if (headerDot) headerDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+      } else if (status === 'Completed') {
+        if (text) text.innerText = 'Completed';
+        if (badge) badge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-950/70 text-emerald-300 border border-emerald-500/50 flex items-center space-x-1.5';
+        if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+        if (headerText) {
+          headerText.innerText = 'Agent: Completed';
+          headerText.className = 'text-emerald-300 font-medium';
+        }
+        if (headerDot) headerDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+      } else if (status === 'Failed' || status === 'Error') {
+        if (text) text.innerText = 'Failed';
+        if (badge) badge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-rose-950/70 text-rose-300 border border-rose-500/50 flex items-center space-x-1.5';
+        if (dot) dot.className = 'w-2 h-2 rounded-full bg-rose-400';
+        if (headerText) {
+          headerText.innerText = 'Agent: Error';
+          headerText.className = 'text-rose-400 font-medium';
+        }
+        if (headerDot) headerDot.className = 'w-2 h-2 rounded-full bg-rose-400';
+      } else {
+        if (text) text.innerText = 'Standby';
+        if (badge) badge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-slate-800 text-slate-400 border border-slate-700 flex items-center space-x-1.5';
+        if (dot) dot.className = 'w-2 h-2 rounded-full bg-slate-500';
+        if (headerText) {
+          headerText.innerText = 'Agent: Standby';
+          headerText.className = 'text-slate-300 font-medium';
+        }
+        if (headerDot) headerDot.className = 'w-2 h-2 rounded-full bg-slate-500';
+      }
+    }
+
+    function clearAllDashboards() {
+      isDisplayCleared = true;
+
+      // 1. Close any active SSE streaming connection
+      if (currentEventSource) {
+        currentEventSource.close();
+        currentEventSource = null;
+      }
+      activeSessionId = null;
+
+      // 2. Clear Sub-Agent 1 (Theorist / Methodologist)
+      const theoristContent = document.getElementById('theoristContent');
+      if (theoristContent) {
+        theoristContent.innerHTML = `
+          <div class="p-6 text-center text-slate-500 text-xs">
+            Provide input data and click "Launch Autonomous Pipeline" to generate physics methodology.
+          </div>
+        `;
+      }
+      const theoristStatus = document.getElementById('theoristStatus');
+      if (theoristStatus) theoristStatus.innerText = "Waiting to plan...";
+      cachedPlanMarkdown = "";
+
+      // 3. Clear Sub-Agent 2 (ML Experimenter & Training)
+      const experimenterLogs = document.getElementById('experimenterLogs');
+      if (experimenterLogs) {
+        experimenterLogs.innerHTML = `
+          <div class="p-6 text-center text-slate-500 text-xs">
+            Code execution logs, training steps, and sanity cross-check outputs will stream here.
+          </div>
+        `;
+      }
+      const experimenterStatus = document.getElementById('experimenterStatus');
+      if (experimenterStatus) experimenterStatus.innerText = "Idle";
+
+      // 4. Clear Inter-Agent Dialogue & Cross-Talk
+      const crosstalkMessages = document.getElementById('crosstalkMessages');
+      if (crosstalkMessages) {
+        crosstalkMessages.innerHTML = `
+          <div class="p-6 text-center text-slate-500 text-xs">
+            Live consultations, theoretical Q&A, and peer-review defenses between Sub-Agent 1 and Sub-Agent 2 will appear here.
+          </div>
+        `;
+      }
+      crosstalkCount = 0;
+      const crosstalkCountEl = document.getElementById('crosstalkCount');
+      if (crosstalkCountEl) crosstalkCountEl.innerText = "0";
+
+      // 5. Clear Figures & Plot Gallery
+      const figuresGrid = document.getElementById('figuresGrid');
+      if (figuresGrid) {
+        figuresGrid.innerHTML = `
+          <div class="col-span-2 text-center py-12 text-slate-500 text-xs">
+            Figures saved by the Experimenter agent in <code class="text-cyan-400">outputs/figures/</code> will appear here automatically.
+          </div>
+        `;
+      }
+      const figureCount = document.getElementById('figureCount');
+      if (figureCount) figureCount.innerText = "0";
+
+      // 6. Clear Run Logs Detail View
+      const runDetailContent = document.getElementById('runDetailContent');
+      if (runDetailContent) {
+        runDetailContent.innerHTML = `
+          <div class="p-8 text-center text-slate-500 text-xs italic">
+            Select an archived run on the left to inspect its executive summary, metrics, and generated code scripts.
+          </div>
+        `;
+      }
+      loadRunLogs(false);
+
+      // 7. Clear Steering Input
+      const steeringInput = document.getElementById('steeringInput');
+      if (steeringInput) steeringInput.value = "";
+
+      // 8. Reset Status Bar & Badges
+      setAgentStatus('Standby');
+      const activeIterationBadge = document.getElementById('activeIterationBadge');
+      if (activeIterationBadge) activeIterationBadge.innerText = "Standby";
+
+      const progressBar = document.getElementById('pipelineProgressBar');
+      if (progressBar) {
+        progressBar.style.width = "0%";
+        progressBar.className = "bg-cyan-500 h-1.5 rounded-full transition-all duration-500";
+      }
+
+      const statusText = document.getElementById('pipelineStatusText');
+      if (statusText) statusText.innerText = "Ready for experimental prompt.";
+
+      // 9. Reset Run Buttons
+      const runBtn = document.getElementById('runBtn');
+      if (runBtn) {
+        runBtn.disabled = false;
+        runBtn.innerHTML = `<i data-lucide="play" class="w-4 h-4"></i><span>Launch Autonomous Pipeline</span>`;
+      }
+      const resumeBtn = document.getElementById('resumeBtn');
+      if (resumeBtn) resumeBtn.disabled = false;
+
+      // 10. Re-render icons
+      refreshIcons();
+    }
+
+    function insertTemplate() {
+      document.getElementById('taskInput').value = "Inspect dataset observables (px, py, pz, E). Reconstruct invariant mass M = sqrt(E^2 - p^2). Train a PyTorch classifier to separate signal from background, achieve AUC > 0.95, and verify 4-momentum conservation.";
+      document.getElementById('targetInput').value = "AUC >= 0.95, mass resolution < 12 MeV";
+    }
+
+    async function startPipeline(resume = false) {
+      isDisplayCleared = false;
+      const task = document.getElementById('taskInput').value.trim();
+      const target = document.getElementById('targetInput').value.trim();
+      const folderPath = document.getElementById('folderInput').value.trim();
+
+      if (!task) {
+        alert("Please enter a physics task description.");
+        return;
+      }
+
+      const runBtn = document.getElementById('runBtn');
+      const resumeBtn = document.getElementById('resumeBtn');
+      runBtn.disabled = true;
+      if (resumeBtn) resumeBtn.disabled = true;
+
+      const actionText = resume ? "Resuming Experimenter Training..." : "Autonomous Pipeline Running...";
+      runBtn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i><span>${actionText}</span>`;
+      refreshIcons();
+
+      setAgentStatus('Running');
+      document.getElementById('pipelineProgressBar').className = 'bg-cyan-500 h-1.5 rounded-full transition-all duration-500';
+      document.getElementById('pipelineProgressBar').style.width = '20%';
+      document.getElementById('pipelineStatusText').innerText = resume ? "Resuming from established plan..." : "Uploading files / validating paths...";
+
+      const formData = new FormData();
+      formData.append('task', task);
+      formData.append('target', target);
+      formData.append('mode', currentDataMode);
+
+      if (resume) {
+        const existing = cachedPlanMarkdown || document.getElementById('theoristContent').innerText;
+        if (existing && existing.length > 50) {
+          formData.append('existing_plan', existing);
+          switchOutputTab('experimenter');
+        }
+      }
+
+      const pretrainedModel = document.getElementById('pretrainedModelInput').value.trim();
+      if (pretrainedModel) {
+        formData.append('pretrained_model', pretrainedModel);
+      }
+      if (uploadedModelFile) {
+        formData.append('model_file', uploadedModelFile);
+      }
+
+      if (currentDataMode === 'upload') {
+        if (selectedFiles.length === 0) {
+          alert("Please upload at least one dataset file or switch to folder path.");
+          runBtn.disabled = false;
+          runBtn.innerHTML = `<i data-lucide="play" class="w-4 h-4"></i><span>Launch Autonomous Pipeline</span>`;
+          refreshIcons();
+          return;
+        }
+        for (let f of selectedFiles) {
+          formData.append('files', f);
+        }
+      } else {
+        if (!folderPath) {
+          alert("Please provide a folder path.");
+          runBtn.disabled = false;
+          runBtn.innerHTML = `<i data-lucide="play" class="w-4 h-4"></i><span>Launch Autonomous Pipeline</span>`;
+          refreshIcons();
+          return;
+        }
+        formData.append('folder_path', folderPath);
+      }
+
+      try {
+        const resp = await fetch('/api/run', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await resp.json();
+        if (data.session_id) {
+          subscribeToStream(data.session_id);
+        } else {
+          setAgentStatus('Standby');
+          alert("Failed to start session: " + JSON.stringify(data));
+          runBtn.disabled = false;
+        }
+      } catch (err) {
+        setAgentStatus('Standby');
+        alert("Error launching pipeline: " + err);
+        runBtn.disabled = false;
+      }
+    }
+
+    let crosstalkCount = 0;
+
+    function subscribeToStream(sessionId) {
+      activeSessionId = sessionId;
+      if (currentEventSource) currentEventSource.close();
+      currentEventSource = new EventSource('/api/stream/' + sessionId);
+
+      document.getElementById('theoristContent').innerHTML = '';
+      document.getElementById('experimenterLogs').innerHTML = '';
+      document.getElementById('crosstalkMessages').innerHTML = '';
+      crosstalkCount = 0;
+      document.getElementById('crosstalkCount').innerText = '0';
+
+      currentEventSource.onmessage = (e) => {
+        const ev = JSON.parse(e.data);
+        handleStreamEvent(ev);
+      };
+
+      currentEventSource.onerror = () => {
+        currentEventSource.close();
+        document.getElementById('runBtn').disabled = false;
+        const resBtn = document.getElementById('resumeBtn');
+        if (resBtn) resBtn.disabled = false;
+        document.getElementById('runBtn').innerHTML = `<i data-lucide="play" class="w-4 h-4"></i><span>Launch Autonomous Pipeline</span>`;
+        refreshIcons();
+      };
+    }
+
+    async function sendLiveSteering() {
+      const input = document.getElementById('steeringInput');
+      const text = input.value.trim();
+      if (!text) return;
+      if (!activeSessionId) {
+        alert("No pipeline run is currently active to receive live steering instructions.");
+        return;
+      }
+
+      const btn = document.getElementById('sendSteerBtn');
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i><span>Delivering...</span>`;
+      refreshIcons();
+
+      const formData = new FormData();
+      formData.append('session_id', activeSessionId);
+      formData.append('instruction', text);
+
+      try {
+        const res = await fetch('/api/steer', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.status === 'ok') {
+          input.value = '';
+          input.placeholder = "Directive delivered! Type more guidance anytime...";
+          switchOutputTab('crosstalk');
+        } else {
+          alert("Notice: " + (data.error || "Could not deliver instruction."));
+        }
+      } catch (err) {
+        alert("Failed to send steering directive: " + err);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="send" class="w-3.5 h-3.5"></i><span>Send Directive ⚡</span>`;
+        refreshIcons();
+      }
+    }
+
+    function handleStreamEvent(ev) {
+      const type = ev.type;
+
+      if (type === 'stage') {
+        document.getElementById('pipelineStatusText').innerText = ev.message;
+        if (ev.progress) document.getElementById('pipelineProgressBar').style.width = ev.progress + '%';
+        if (ev.iteration) document.getElementById('activeIterationBadge').innerText = 'Iteration ' + ev.iteration;
+      } else if (type === 'theorist_plan') {
+        cachedPlanMarkdown = ev.content;
+        document.getElementById('theoristContent').innerHTML = marked.parse(ev.content);
+        document.getElementById('theoristStatus').innerText = "Methodology Established";
+      } else if (type === 'tool_call') {
+        const div = document.createElement('div');
+        div.className = "p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-mono";
+        div.innerHTML = `<span class="text-yellow-400">⚙ [${ev.agent} Tool]</span> <span class="text-cyan-400">${ev.name}</span> <span class="text-slate-400">${JSON.stringify(ev.args)}</span>`;
+        document.getElementById('experimenterLogs').appendChild(div);
+      } else if (type === 'tool_result') {
+        const div = document.createElement('div');
+        div.className = "p-2.5 rounded-lg bg-slate-950/70 border border-slate-800 text-[11px] font-mono text-slate-300 max-h-36 overflow-y-auto whitespace-pre-wrap";
+        div.innerText = ev.output;
+        document.getElementById('experimenterLogs').appendChild(div);
+      } else if (type === 'experimenter_report') {
+        const div = document.createElement('div');
+        div.className = "p-3 rounded-xl bg-slate-900/90 border border-emerald-500/40 text-xs leading-relaxed";
+        div.innerHTML = `<h4 class="font-bold text-emerald-400 mb-2">🧪 Experimenter Evaluation Report</h4>` + marked.parse(ev.content);
+        document.getElementById('experimenterLogs').appendChild(div);
+        fetchFigures();
+      } else if (type === 'crosstalk') {
+        crosstalkCount++;
+        document.getElementById('crosstalkCount').innerText = crosstalkCount;
+        const div = document.createElement('div');
+
+        const isUser = ev.sender.toLowerCase().includes('user');
+        const isTheorist = ev.sender.toLowerCase().includes('methodologist') || ev.sender.toLowerCase().includes('theorist');
+
+        let borderColor = 'border-emerald-500/40 bg-emerald-950/20';
+        let senderColor = 'text-emerald-400';
+        let icon = '🧪 ML Experimenter';
+
+        if (isUser) {
+          borderColor = 'border-amber-500/60 bg-amber-950/30';
+          senderColor = 'text-amber-400';
+          icon = '⚡ Live User Steering Directive';
+        } else if (isTheorist) {
+          borderColor = 'border-pink-500/40 bg-pink-950/20';
+          senderColor = 'text-pink-400';
+          icon = '🧠 Theorist / Methodologist';
+        }
+
+        div.className = `p-3.5 rounded-xl border ${borderColor} text-xs leading-relaxed space-y-1.5 shadow-md`;
+        div.innerHTML = `
+          <div class="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-1.5">
+            <span class="font-bold ${senderColor}">${icon}</span>
+            <span class="text-[10px] text-slate-500">To: ${ev.recipient}</span>
+          </div>
+          <div class="prose prose-invert max-w-none text-slate-300 text-xs">${marked.parse(ev.message)}</div>
+        `;
+        document.getElementById('crosstalkMessages').appendChild(div);
+      } else if (type === 'figure_saved') {
+        fetchFigures();
+      } else if (type === 'pipeline_finished') {
+        const isError = ev.status && (ev.status.toUpperCase().includes('ERROR') || ev.status.toUpperCase().includes('FAIL'));
+        if (isError) {
+          setAgentStatus('Failed');
+          document.getElementById('pipelineProgressBar').style.width = '100%';
+          document.getElementById('pipelineProgressBar').className = 'bg-rose-500 h-1.5 rounded-full transition-all duration-500';
+          let errorMsg = ev.status;
+          if (ev.run_log_dir) {
+            errorMsg += ` (Saved in ${ev.run_log_dir})`;
+          }
+          document.getElementById('pipelineStatusText').innerText = errorMsg;
+          document.getElementById('runBtn').disabled = false;
+          const resBtn = document.getElementById('resumeBtn');
+          if (resBtn) resBtn.disabled = false;
+          document.getElementById('runBtn').innerHTML = `<i data-lucide="rotate-ccw" class="w-4 h-4 text-amber-400"></i><span>Retry Pipeline</span>`;
+        } else {
+          setAgentStatus('Completed');
+          document.getElementById('pipelineProgressBar').style.width = '100%';
+          document.getElementById('pipelineProgressBar').className = 'bg-cyan-500 h-1.5 rounded-full transition-all duration-500';
+          let finishedMsg = "Pipeline Completed: " + ev.status;
+          if (ev.run_log_dir) {
+            finishedMsg += ` (Archive saved in ${ev.run_dir || ev.run_log_dir})`;
+          }
+          document.getElementById('pipelineStatusText').innerText = finishedMsg;
+          document.getElementById('runBtn').disabled = false;
+          const resBtn = document.getElementById('resumeBtn');
+          if (resBtn) resBtn.disabled = false;
+          document.getElementById('runBtn').innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i><span>Completed</span>`;
+        }
+        refreshIcons();
+        fetchFigures();
+        loadRunLogs(true);
+      }
+    }
+
+    async function loadRunLogs(autoSelect = false) {
+      try {
+        const res = await fetch('/api/logs');
+        const runs = await res.json();
+        const listEl = document.getElementById('runsList');
+        if (!runs || runs.length === 0) {
+          listEl.innerHTML = '<div class="text-xs text-slate-500 p-4 text-center">No archived runs found yet.</div>';
+          return;
+        }
+
+        listEl.innerHTML = runs.map((r, i) => `
+          <div onclick="viewRunDetails('${r.run_id}')" class="p-3 bg-slate-900/80 hover:bg-slate-800/90 border border-slate-800 rounded-xl cursor-pointer transition space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-mono font-bold text-amber-400">${r.run_id}</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">${r.status.replace('SUCCESS_', '')}</span>
+            </div>
+            <div class="text-[11px] text-slate-400 truncate">${r.task || 'Physics analysis'}</div>
+            <div class="text-[10px] text-slate-500">${r.timestamp}</div>
+          </div>
+        `).join('');
+
+        // Automatically load the latest run details only when autoSelect is explicitly true
+        if (autoSelect && runs.length > 0) {
+          viewRunDetails(runs[0].run_id);
+        }
+      } catch (err) {
+        console.error("Error loading runs:", err);
+      }
+    }
+
+    async function viewRunDetails(runId) {
+      try {
+        const res = await fetch('/api/logs/' + runId);
+        const data = await res.json();
+        const contentEl = document.getElementById('runDetailContent');
+        if (data.summary) {
+          contentEl.innerHTML = marked.parse(data.summary);
+        } else {
+          contentEl.innerHTML = `<p class="text-slate-400">Run ID: <b>${runId}</b></p><pre class="text-[11px] mt-2">${JSON.stringify(data.results, null, 2)}</pre>`;
+        }
+      } catch (err) {
+        console.error("Error loading run detail:", err);
+      }
+    }
+
+    let pathDebounceTimer = null;
+    function handlePathInput(e) {
+      clearTimeout(pathDebounceTimer);
+      const val = e.target.value.trim();
+      const badge = document.getElementById('pathValidationBadge');
+      if (!val) {
+        badge.className = 'hidden';
+        return;
+      }
+
+      pathDebounceTimer = setTimeout(async () => {
+        try {
+          const res = await fetch('/api/check_path?path=' + encodeURIComponent(val));
+          const data = await res.json();
+          badge.classList.remove('hidden');
+          if (data.exists) {
+            badge.className = 'text-[11px] font-mono py-1.5 px-3 rounded-lg border border-emerald-500/50 bg-emerald-950/40 text-emerald-300';
+            badge.innerHTML = `<span class="font-bold">✓</span> ${data.message} <span class="text-slate-400 block text-[10px] truncate">${data.resolved_path}</span>`;
+          } else {
+            badge.className = 'text-[11px] font-mono py-1.5 px-3 rounded-lg border border-amber-500/50 bg-amber-950/40 text-amber-300';
+            badge.innerHTML = `<span class="font-bold">⚠️</span> ${data.message}`;
+          }
+        } catch (err) {
+          console.error("Path check error:", err);
+        }
+      }, 300);
+    }
+
+    async function fetchFigures() {
+      try {
+        const res = await fetch('/api/figures');
+        const figs = await res.json();
+        document.getElementById('figureCount').innerText = figs.length;
+        const grid = document.getElementById('figuresGrid');
+        if (figs.length === 0) return;
+
+        grid.innerHTML = figs.map(f => `
+          <div class="glass-card rounded-xl p-3 flex flex-col space-y-2 group">
+            <div class="relative overflow-hidden rounded-lg bg-black/40 border border-slate-800">
+              <img src="/figures/${f}" alt="${f}" class="w-full h-48 object-contain group-hover:scale-105 transition duration-300">
+            </div>
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-slate-300 font-mono truncate max-w-[200px]">${f}</span>
+              <a href="/figures/${f}" target="_blank" class="text-cyan-400 hover:text-cyan-300 flex items-center space-x-1">
+                <span>Zoom</span>
+                <i data-lucide="external-link" class="w-3 h-3"></i>
+              </a>
+            </div>
+          </div>
+        `).join('');
+        refreshIcons();
+      } catch (err) {
+        console.error("Error fetching figures:", err);
+      }
+    }
+
+    // Initial check
+    refreshIcons();
+    fetchFigures();
+  </script>
+</body>
+</html>
