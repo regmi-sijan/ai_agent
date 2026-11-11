@@ -1,6 +1,7 @@
 from typing import Callable, Optional, List, Dict, Any
 from pathlib import Path
 from agent.tools import registry
+from agent.prompt_refiner import refine_request
 from agent.memory import ConversationMemory
 from agent.utils import send_message_with_retry
 import config
@@ -106,7 +107,8 @@ class Agent:
         max_steps = config.MAX_AGENT_STEPS
 
         # Send current user message
-        response = send_message_with_retry(chat, user_prompt)
+        task_brief = refine_request(client, user_prompt)
+        response = send_message_with_retry(chat, task_brief)
 
         while steps < max_steps:
             function_calls = response.function_calls

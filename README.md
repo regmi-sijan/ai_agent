@@ -7,6 +7,7 @@ This is an experimental research tool. It executes generated code with your user
 ## What it can do
 
 - Inspect CSV, TSV, whitespace-delimited text/DAT, NumPy NPY/NPZ, Parquet, and ROOT datasets; scan folders recursively for supported files.
+- Expand your input into a detailed task brief before analysis, preserving your original request and flagging missing information. The brief is visible in pipeline dialogue and saved as `task_brief.md` in each run.
 - Coordinate a **Methodologist** for plans and model-based review with an **Experimenter** for code generation, execution, and evaluation.
 - Attempt classification, regression, spectrum fitting, invariant-mass reconstruction, and other analyses described in your prompt using the installed scientific Python stack.
 - Inspect local PyTorch or joblib model checkpoints for possible reuse.
@@ -94,6 +95,12 @@ printf '%s\n' 'Compare against a simpler baseline before increasing model comple
 
 The directive is consumed at the next supported agent boundary. Dataset filenames containing commas are unsupported by the current multi-file delimiter logic.
 
+## Input refinement
+
+Pipeline tasks and general assistant queries pass through multi-model Gemini prompt refinement before the analysis agents receive them. One model drafts a detailed brief, a distinct model independently critiques it against your original request, and a final revision incorporates justified corrections. It organizes your objective, supplied constraints, proposed steps, expected outputs, validation criteria, and missing information. Your original wording remains authoritative. The step has no execution tools and cannot inspect datasets, so agents must verify its suggestions against the actual inputs. Scientifically essential missing details are flagged for clarification.
+
+This uses your existing Gemini API key with no additional account setup. `PROMPT_REFINER_MODELS` supplies an ordered list of at least two distinct model IDs, defaulting to `gemini-3.5-flash-lite,gemini-3.1-flash-lite`. Use concrete model IDs rather than aliases that might resolve to the same model. A successful refinement makes three model requests. Additional configured models are tried when a candidate is unavailable. If drafting, independent review, or final revision fails, analysis stops with an explicit error so a single-model prompt is never presented as cross-checked. Provider quotas and charges still apply. Pipeline briefs are shown in the dialogue and saved in `outputs/runs/run_NNN/task_brief.md`, including when a previous methodology plan is reused. Resume still reuses a plan rather than restoring execution state.
+
 ## Configuration
 
 | Variable | Default | Purpose |
@@ -101,6 +108,7 @@ The directive is consumed at the next supported agent boundary. Dataset filename
 | `GEMINI_API_KEY` | none | Required Gemini API key; `GOOGLE_API_KEY` is also accepted. |
 | `AGENT_MODEL` | `gemini-2.5-flash` | Primary function-calling model ID. |
 | `AGENT_FALLBACK_MODELS` | empty | Comma-separated model IDs to try when a pipeline model is unavailable, overloaded, or quota-limited. |
+| `PROMPT_REFINER_MODELS` | `gemini-3.5-flash-lite,gemini-3.1-flash-lite` | Distinct Gemini models for prompt drafting and independent critique. |
 | `MAX_AGENT_STEPS` | `5` | Manual tool-loop round limit for the general assistant and Methodologist. The Experimenter uses `max(value + 3, 7)`. |
 | `RATE_LIMIT_DELAY` | `2.5` | Minimum spacing in seconds for model requests; adjust for your quota. This is not a quota guarantee. |
 

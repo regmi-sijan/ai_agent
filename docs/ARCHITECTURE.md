@@ -5,10 +5,11 @@
 ## Pipeline lifecycle
 
 1. `AutonomousPhysicsOrchestrator` allocates a numbered `RunLogger` directory and archives eligible dataset files.
-2. `MethodologistAgent` inspects inputs and produces a plan, or the orchestrator accepts a previous plan.
-3. `ExperimenterAgent` receives the plan, writes and executes scripts, and may consult the Methodologist.
-4. The Methodologist reviews the experiment's text report. A recognized `DECISION: APPROVED` marker ends the run; otherwise the plan is revised until the three-iteration cap.
-5. The logger writes the summary, plan, dialogue, metadata, and available artifacts.
+2. A tool-free Gemini input refinement step uses one model to draft, a distinct model to critique, and a final revision to expand the original request into a task brief with constraints, outputs, validation criteria, and missing information. The original wording is retained, the brief is archived as `task_brief.md`, and it is forwarded to both agents. The selected model IDs are recorded in the brief. A failed stage stops analysis, preserving the requirement for independent model cross-checking. General assistant queries use the same refinement function.
+3. `MethodologistAgent` inspects inputs and produces a plan, or the orchestrator accepts a previous plan.
+4. `ExperimenterAgent` receives the plan, writes and executes scripts, and may consult the Methodologist.
+5. The Methodologist reviews the experiment's text report. A recognized `DECISION: APPROVED` marker ends the run; otherwise the plan is revised until the three-iteration cap.
+6. The logger writes the summary, plan, dialogue, metadata, and available artifacts.
 
 The model's approval marker controls status; it is not independently calculated from numeric target thresholds. There is no persistent job scheduler or distributed execution system.
 

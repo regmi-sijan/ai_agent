@@ -20,6 +20,13 @@ for _m in _CASCADE_CANDIDATES:
         EFFICIENT_MODEL_ARCHITECTURES.append(_m)
 
 DEFAULT_MODEL = EFFICIENT_MODEL_ARCHITECTURES[0]
+# Use concrete, distinct model IDs so the critic is independent of the drafter.
+PROMPT_REFINER_MODELS = [
+    model.strip()
+    for model in os.getenv(
+        "PROMPT_REFINER_MODELS", "gemini-3.5-flash-lite,gemini-3.1-flash-lite"
+    ).split(",") if model.strip()
+]
 MAX_AGENT_STEPS = int(os.getenv("MAX_AGENT_STEPS", "5"))
 
 # Rate Limiting & Internet Search Settings

@@ -5,6 +5,7 @@ from agent.subagents.methodologist import MethodologistAgent
 from agent.subagents.experimenter import ExperimenterAgent
 from agent.tools.physics_tools import set_theorist_consult_handler, set_active_run_context
 from agent.run_logger import RunLogger
+from agent.prompt_refiner import refine_request
 
 class AutonomousPhysicsOrchestrator:
     """Orchestrates an autonomous closed-loop between:
@@ -140,7 +141,22 @@ class AutonomousPhysicsOrchestrator:
         iteration = 1
         history: List[Dict[str, Any]] = []
 
-        desc_with_model = user_description
+        if self.on_crosstalk:
+            self.on_crosstalk("Input Refinement", "Analysis Agents", "Preparing a detailed task brief from your request.")
+        task_brief = refine_request(
+            client=self.methodologist._init_client(),
+            user_request=user_description,
+            dataset_path=dataset_path,
+            target_precision=target_precision,
+            pretrained_model_path=pretrained_model_path,
+            on_log=self._handle_agent_log,
+        )
+        (self.run_logger.run_dir / "task_brief.md").write_text(task_brief, encoding="utf-8")
+        self.run_logger.log_dialogue("Input Refinement", "Analysis Agents", task_brief)
+        if self.on_crosstalk:
+            self.on_crosstalk("Input Refinement", "Analysis Agents", task_brief)
+
+        desc_with_model = task_brief
         if pretrained_model_path:
             desc_with_model += f"\n[PRE-TRAINED MODEL]: Checkpoint provided at '{pretrained_model_path}'. Use `inspect_pretrained_model` to examine its architecture and design a transfer learning / fine-tuning strategy."
 
@@ -200,7 +216,7 @@ class AutonomousPhysicsOrchestrator:
 
             experiment_result = self.experimenter.execute_plan(
                 dataset_path=dataset_path,
-                methodology_plan=current_plan,
+                methodology_plan=task_brief + "\n\n# Methodology plan\n\n" + current_plan,
                 iteration_number=iteration
             )
 
